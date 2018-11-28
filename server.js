@@ -18,19 +18,22 @@ var userRoutes = require('./routes/user');
 var groupRoutes = require('./routes/groups');
 var messagesRoutes = require('./routes/messages');
 
+var path    = require("path");
+
 var storage = multer.memoryStorage()
 // var upload = multer({storage: storage});
 app.use(cors());
 app.options('*', cors());
 app.use(bodyParser.json());
 app.use(express.static('profile-pics'));
-
+app.use(express.static(__dirname + '/html'));
 
 app.use('/', friendRoutes);
 app.use('/', postRoutes);
 app.use('/', userRoutes);
 app.use('/', groupRoutes);
 app.use('/', messagesRoutes);
+
 
 app.post(
     "/upload", function (req, res) {
@@ -87,6 +90,13 @@ app.get('/upload', function (req, res, next) {
 
 });
 
+app.get('', function (req, res) {
+    res.sendFile(path.join(__dirname+'/html/index.html'));
+})
+
+app.get('*/', function (req, res) {
+    res.redirect('/')
+})
 
 app.listen(PORT);
 console.log("listening on " + PORT);
