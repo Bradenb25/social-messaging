@@ -8,7 +8,7 @@ var runQuery = function runQuery(query, params, callback) {
             console.log(err);
             callback(err, null);
         } else {
-            console.log('got the rows', result.rows);
+            // console.log('got the rows', result.rows);
             callback(err, result.rows);
         }
     });

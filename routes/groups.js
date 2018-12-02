@@ -4,6 +4,9 @@ var bodyParser = require('body-parser');
 var query = require('../main_functions/query');
 var constants = require('../constants');
 var jwt = require('jwt-simple');
+var fs = require('fs');
+const IncomingForm = require('formidable').IncomingForm;
+var path = require("path");
 
 groupRouter.post('/group', function (req, res) {
     let token = req.headers.authorization.replace('Bearer ', '');
@@ -27,7 +30,7 @@ groupRouter.get('/group', function (req, res) {
     let userCred = jwt.decode(token, '123', 'HS256');
     // TODO authenticate user is part of that group or that the 
     // group is an open group.
-    query(constants.GET_GROUP, [req.query.id],
+    query(constants.GET_GROUP, [req.query.groupId],
         function (err, result) {
             if (err) {
                 res.status(404).end();
@@ -35,6 +38,69 @@ groupRouter.get('/group', function (req, res) {
                 res.status(200).json(result).end();
             }
         })
+});
+
+groupRouter.post('/group/pic', function (req, res) {
+    let groupId = req.query.groupId;
+    var form = new IncomingForm();
+    console.log('trying to upload photo');
+    console.log('group id is ' + groupId);
+    form.on('file', (field, file) => {
+        console.log("The file is " + file.path);
+        fs.readFile(file.path, 'hex', function (err, imgData) {
+            console.log(err);
+            imgData = '\\x' + imgData; 
+            query(constants.UPDATE_GROUP_PIC, [imgData, groupId],
+                function (err, writeResult) {
+                    console.log('err', err, 'pg writeResult', writeResult);
+                });
+        });
+    });   
+    form.on('end', () => {
+        res.json();
+    });
+    form.parse(req);  
+});
+
+groupRouter.get('/group/pic', function (req, res) {
+    let groupId = req.query.groupId; 
+    let fileName = './group-pics/' + groupId + '.jpg';
+    let groupPic = groupId + '.jpg';
+
+    fs.exists(fileName, function (exists) {
+        if (exists) {
+            res.status(200).contentType('image/png').sendFile(groupPic, {
+                root: path.join(__dirname, '../group-pics/')
+            }, function (err) {
+                if (err) {
+                    console.log(err);
+                }
+            });
+
+        } else {
+            query(constants.GET_GROUP_PIC, [groupId],
+                function (err, readResult) {
+                    console.log('grou pic is ');
+                    console.log(readResult);
+                    console.log(readResult.length);
+                    if (readResult && readResult.length > 0) {
+
+                        fs.writeFile(fileName, readResult[0].picture, function (err) {
+                            res.status(200).sendFile(groupPic, {
+                                root: path.join(__dirname, '../group-pics/')
+                            }, function (err) {
+                                if (err) {
+                                    
+                                    console.log(err);
+                                }
+                            });
+                        });
+                    } else {
+                        res.status(404).end();
+                    }
+                });
+        }
+    })
 });
 
 groupRouter.put('/group', function (req, res) {
@@ -156,7 +222,7 @@ groupRouter.delete('/group/request', function (req, res) {
     let userCred = jwt.decode(token, '123', 'HS256');
 
     query(constants.DELETE_JOIN_REQUEST, [req.query.id],
-        function(err, result) {
+        function (err, result) {
             if (err) {
                 res.status(404).end();
             } else {
@@ -164,5 +230,15 @@ groupRouter.delete('/group/request', function (req, res) {
             }
         })
 });
+
+groupRouter.get('/group/types', function (req, res) {
+    query(constants.GET_GROUP_TYPES, [], function (err, result) {
+        if (err) {
+            res.status(404).end();
+        } else {
+            res.status(200).json(result).end();
+        }
+    });
+})
 
 module.exports = groupRouter

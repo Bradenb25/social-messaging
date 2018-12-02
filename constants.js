@@ -4,14 +4,16 @@ module.exports = {
     CREATE_POST:
         `
         INSERT INTO posts (time, group_id, poster_id, content) 
-        VALUES ($1, $2, $3, $4);
+        VALUES ($1, $2, $3, $4) RETURNING id;
     `,
     GET_POSTS:
         `
-        SELECT p.time, p.group_id, p.poster_id, p.content 
+        SELECT p.id, p.time, p.group_id, p.poster_id, p.content, u.username, u.first_name as name
         FROM posts p
         JOIN groups g ON g.id = p.group_id
-        WHERE g.name = $1
+        JOIN users u ON u.id = p.poster_id
+        WHERE g.id = $1
+        ORDER BY p.time DESC;
     `,
     UPDATE_POST:
         `
@@ -28,11 +30,11 @@ module.exports = {
     CREATE_POST_COMMENT:
         `
         INSERT INTO post_comments (content, post_id, poster_id, time) VALUES    
-        ($1, $2, $3, $4);
+        ($1, $2, $3, $4) RETURNING id;
     `,
     GET_COMMENTS_FOR_POST:
         `
-        SELECT pc.content, pc.time, u.first_name, pc.id
+        SELECT pc.content, u.first_name as name, pc.id as post_comment_id, u.username, post_id
         FROM post_comments pc
         JOIN users u ON pc.poster_id = u.id
         WHERE pc.post_id = $1
@@ -54,7 +56,7 @@ module.exports = {
     CREATE_USER:
         `
         INSERT INTO users (email, username, hashed_password, first_name) VALUES
-        ($1, $2, $3, $4);
+        ($1, $2, $3, $4); 
     `,
     GET_USER_BY_NAME:
         `
@@ -64,9 +66,9 @@ module.exports = {
     `,
     GET_USERS_BY_NAME:
         `
-        SELECT first_name as name, username
+        SELECT first_name as name, username, id
         FROM users 
-        WHERE lower(first_name) LIKE $1;
+        WHERE lower(first_name) LIKE $1 AND id != $2;  
     `,
     UPDATE_USER:
         `
@@ -125,14 +127,29 @@ module.exports = {
     CREATE_GROUP:
         `
         INSERT INTO groups (name, group_type_id, owner, description) 
-            VALUES ($1, $2, $3, $4);
+            VALUES ($1, $2, $3, $4) RETURNING id;
+    `,
+
+    UPDATE_GROUP_PIC:
+    `
+        UPDATE groups
+        SET picture = $1
+        WHERE id = $2;
+    `,
+
+    GET_GROUP_PIC:
+    `
+        SELECT picture 
+        FROM groups
+        WHERE id = $1;
     `,
 
     GET_GROUP: 
     `
-        SELECT *
-        FROM groups
-        WHERE id = $1;
+        SELECT g.id, g.name, g.picture, g.group_type_id, g.description, gt.icon, gt.name as group_type_name
+        FROM groups g
+        JOIN group_types gt ON g.group_type_id = gt.id
+        WHERE g.id = $1;
     `,
 
     GET_GROUPS:
@@ -202,6 +219,12 @@ module.exports = {
         FROM group_requests
         WHERE id = $1;
     `,
+
+    GET_GROUP_TYPES:
+    `
+        SELECT id, name as type, icon, description
+        FROM group_types
+    `,
     //#endregion
 
     //#region friends
@@ -228,7 +251,7 @@ module.exports = {
         `
         DELETE 
         FROM friends_lookup
-        WHERE user_id = $1 OR friend_id = $1;
+        WHERE (user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1);
     `,
 
     CREATE_FRIEND_REQUEST:
@@ -239,7 +262,7 @@ module.exports = {
 
     GET_FRIEND_REQUESTS:
     `
-        SELECT u.first_name, username
+        SELECT u.first_name, u.username, u.id
         FROM friend_requests fr
         JOIN users u ON u.id = fr.from_id
         WHERE fr.to_id = $1;
