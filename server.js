@@ -35,33 +35,6 @@ app.use('/', groupRoutes);
 app.use('/', messagesRoutes);
 
 
-app.post(
-    "/upload", function (req, res) {
-        let token = req.headers.authorization.replace('Bearer ', '');
-
-        let userCred = jwt.decode(token, '123', 'HS256');
-        console.log("made it into upload");
-        var form = new IncomingForm();
-        form.on('file', (field, file) => {
-            console.log("The file is " + file.path);
-            fs.readFile(file.path, 'hex', function (err, imgData) {
-                // console.log('imgData', imgData);
-                imgData = '\\x' + imgData;
-                query('UPDATE users SET picture = ($1) WHERE id = $2',
-                    [imgData, userCred.userId],
-                    function (err, writeResult) {
-                        console.log('err', err, 'pg writeResult', writeResult);
-                    });
-            });
-            // Do something with the file
-            // e.g. save it to the database
-            // you can access it using file.path
-        });
-        form.on('end', () => {
-            res.json();
-        });
-        form.parse(req);
-    });
 
 app.get('', function (req, res) {
     res.sendFile(path.join(__dirname + '/html/index.html'));

@@ -5,7 +5,6 @@ var query = require('../main_functions/query');
 var constants = require('../constants');
 var jwt = require('jwt-simple');
 var fs = require('fs');
-const IncomingForm = require('formidable').IncomingForm;
 var path = require("path");
 
 groupRouter.post('/group', function (req, res) {

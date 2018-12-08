@@ -6,6 +6,7 @@ var constants = require('../constants');
 var jwt = require('jwt-simple');
 var fs = require('fs');
 var path = require('path');
+const IncomingForm = require('formidable').IncomingForm;
 
 userRouter.use(bodyParser.json());
 
@@ -16,7 +17,7 @@ userRouter.post('/login', (req, res) => {
         if (err) {
             res.status(404);
         } else {
-            let userName = userData.userName; 
+            let userName = userData.userName;
             let payload = {
                 userName: userData.userName,
                 expiration: new Date(),
@@ -24,7 +25,7 @@ userRouter.post('/login', (req, res) => {
             };
 
             console.log('sending back token');
-            
+
             let token = jwt.encode(payload, '123', 'HS256');
 
             let response = {
@@ -36,7 +37,7 @@ userRouter.post('/login', (req, res) => {
                 id: result[0].id
             };
 
-            console.log(response); 
+            console.log(response);
 
             res.status(200).send(response);
             res.end();
@@ -44,16 +45,27 @@ userRouter.post('/login', (req, res) => {
     });
 });
 
+userRouter.get('/user/profile-pic/default', function (req, res) {
+    res.status(200).contentType('image/png').sendFile('default.jpg', {
+        root: path.join(__dirname, '../profile-pics/')
+    }, function (err) {
+        if (err) {
+            console.log(err);
+        } 
+    });  
+});
+
 userRouter.get('/user/profile-pic', function (req, res) {
 
     let userName = req.query.username;
     let fileName = './profile-pics/' + userName + '.jpg';
+
     // console.log(fileName);
     let userProfilePic = userName + '.jpg';
 
     fs.exists(fileName, function (exists) {
         if (exists) {
-            
+
             // console.log('Sending back file ' + userProfilePic);
             res.status(200).contentType('image/png').sendFile(userProfilePic, {
                 root: path.join(__dirname, '../profile-pics/')
@@ -62,7 +74,7 @@ userRouter.get('/user/profile-pic', function (req, res) {
                     console.log(err);
                 }
             });
-
+ 
         } else {
             console.log(userName);
             query(`SELECT picture, username FROM users WHERE username = '${userName}';`,
@@ -89,6 +101,35 @@ userRouter.get('/user/profile-pic', function (req, res) {
         }
     })
 });
+
+userRouter.post(
+    "/user/profile-pic", function (req, res) {
+        let token = req.headers.authorization.replace('Bearer ', '');
+
+        let userCred = jwt.decode(token, '123', 'HS256');
+        console.log("made it into upload");
+        var form = new IncomingForm();
+        form.on('file', (field, file) => {
+            console.log("The file is " + file.path);
+            fs.readFile(file.path, 'hex', function (err, imgData) {
+                // console.log('imgData', imgData);
+                imgData = '\\x' + imgData;
+                query('UPDATE users SET picture = ($1) WHERE id = $2',
+                    [imgData, userCred.userId],
+                    function (err, writeResult) {
+                        console.log('err', err, 'pg writeResult', writeResult);
+                    });
+            });
+            // Do something with the file
+            // e.g. save it to the database
+            // you can access it using file.path
+        });
+        form.on('end', () => {
+            res.json();
+        });
+        form.parse(req);
+    });
+
 
 userRouter.post('/user', function (req, res) {
     var user = req.body;
