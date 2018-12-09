@@ -13,35 +13,42 @@ userRouter.use(bodyParser.json());
 userRouter.post('/login', (req, res) => {
     var userData = req.body;
     console.log('trying to login');
+    console.log(req.body);
     query(constants.GET_USER_BY_NAME, [userData.userName], function (err, result) {
         if (err) {
             res.status(404);
         } else {
-            let userName = userData.userName;
-            let payload = {
-                userName: userData.userName,
-                expiration: new Date(),
-                userId: result[0].id
-            };
+            if (result[0].hashed_password == userData.password) {
+                let userName = userData.userName;
+                let payload = {
+                    userName: userData.userName,
+                    expiration: new Date(),
+                    userId: result[0].id
+                };
 
-            console.log('sending back token');
+                console.log(result[0]);
+                console.log('sending back token');
 
-            let token = jwt.encode(payload, '123', 'HS256');
+                let token = jwt.encode(payload, '123', 'HS256');
 
-            let response = {
-                jwtToken: token,
-                expiration: new Date(),
-                userName,
-                isAuthenticated: true,
-                name: result[0].first_name,
-                id: result[0].id
-            };
+                let response = {
+                    jwtToken: token,
+                    expiration: new Date(),
+                    userName,
+                    isAuthenticated: true,
+                    name: result[0].first_name,
+                    id: result[0].id
+                };
 
-            console.log(response);
+                console.log(response);
 
-            res.status(200).send(response);
-            res.end();
+                res.status(200).send(response);
+                res.end();
+            } else {
+                res.status(403).end();
+            }
         }
+
     });
 });
 
@@ -51,55 +58,37 @@ userRouter.get('/user/profile-pic/default', function (req, res) {
     }, function (err) {
         if (err) {
             console.log(err);
-        } 
-    });  
+        }
+    });
 });
 
 userRouter.get('/user/profile-pic', function (req, res) {
 
-    let userName = req.query.username;
-    let fileName = './profile-pics/' + userName + '.jpg';
+    query(`SELECT picture, username FROM users WHERE username = '${req.query.username}';`,
+        function (err, readResult) {
+            if (readResult.rows && readResult.rows.length > 0) {
+                res.status(200).json({ picture: readResult.rows[0].picture }).end();
+            } else {
+                res.status(404).end();
+            }
+        });
+});
 
-    // console.log(fileName);
-    let userProfilePic = userName + '.jpg';
+userRouter.get('/user/groups', function (req, res) {
+    let token = req.headers.authorization.replace('Bearer ', '');
+    let userCred = jwt.decode(token, '123', 'HS256');
+    console.log('Getting groups for user: ' + userCred.userId);
 
-    fs.exists(fileName, function (exists) {
-        if (exists) {
-
-            // console.log('Sending back file ' + userProfilePic);
-            res.status(200).contentType('image/png').sendFile(userProfilePic, {
-                root: path.join(__dirname, '../profile-pics/')
-            }, function (err) {
-                if (err) {
-                    console.log(err);
-                }
-            });
- 
-        } else {
-            console.log(userName);
-            query(`SELECT picture, username FROM users WHERE username = '${userName}';`,
-                function (err, readResult) {
-                    if (readResult.rows && readResult.rows.length > 0) {
-                        console.log('Sending back file 6 ' + userProfilePic);
-
-                        fileName = `./profile-pics/${readResult.rows[0].username}.jpg`;
-                        userName = readResult.rows[0].username + '.jpg';
-
-                        fs.writeFile(fileName, readResult.rows[0].picture, function (err) {
-                            res.status(200).sendFile(userProfilePic, {
-                                root: path.join(__dirname, '../profile-pics/')
-                            }, function (err) {
-                                if (err) {
-                                    console.log(err);
-                                }
-                            });
-                        });
-                    } else {
-                        res.status(404).end();
-                    }
-                });
-        }
-    })
+    query(constants.GET_GROUPS_USER_IS_IN, [userCred.userId],
+        function (err, readResult) {
+            console.log(readResult);
+            if (readResult && readResult) {
+                console.log(readResult);
+                res.status(200).json({ groups: readResult }).end();
+            } else {
+                res.status(404).end();
+            }
+        })
 });
 
 userRouter.post(
@@ -175,7 +164,6 @@ userRouter.get('/user', function (req, res) {
 
 userRouter.get('/user/search', function (req, res) {
     var userName = req.query.name;
-    // console.log(userName);
     // console.log(constants.GET_USERS_BY_NAME)
     let token = req.headers.authorization.replace('Bearer ', '');
     let userCred = jwt.decode(token, '123', 'HS256');

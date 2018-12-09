@@ -66,8 +66,8 @@ module.exports = {
     `,
     GET_USERS_BY_NAME:
         `
-        SELECT first_name as name, username, id
-        FROM users 
+        SELECT first_name as name, username, id, picture
+        FROM users  
         WHERE lower(first_name) LIKE $1 AND id != $2;  
     `,
     UPDATE_USER:
@@ -81,6 +81,14 @@ module.exports = {
         `
         DELETE FROM users
         WHERE id = $1;
+    `,
+
+    GET_GROUPS_USER_IS_IN:
+    `
+        SELECT g.name, g.id
+        FROM groups_lookup gl
+        JOIN groups g ON g.id = gl.group_id
+        WHERE gl.user_id = $1;
     `,
 
     //#endregion
@@ -153,10 +161,11 @@ module.exports = {
     `,
 
     GET_GROUPS:
-        `
-        SELECT name, id
-        FROM groups 
-        WHERE lower(name) LIKE $1;
+    `
+        SELECT DISTINCT ON (g.id) g.id, g.name 
+        FROM groups g
+        JOIN groups_lookup gl ON gl.group_id = g.id
+        WHERE lower(name) LIKE $1 AND (gl.id = 1 OR gl.id = 2);
     `,
 
     UPDATE_GROUP:
@@ -192,10 +201,10 @@ module.exports = {
 
     GET_USERS_BY_GROUP:
         `
-        SELECT * 
+        SELECT u.first_name as name, u.id, username
         FROM users u
         JOIN groups_lookup g ON g.user_id = u.id
-        WHERE g.group_id = $1,
+        WHERE g.group_id = $1;
     `,    
 
     CREATE_REQUEST_TO_JOIN_GROUP:

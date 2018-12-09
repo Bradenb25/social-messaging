@@ -48,58 +48,31 @@ groupRouter.post('/group/pic', function (req, res) {
         console.log("The file is " + file.path);
         fs.readFile(file.path, 'hex', function (err, imgData) {
             console.log(err);
-            imgData = '\\x' + imgData; 
+            imgData = '\\x' + imgData;
             query(constants.UPDATE_GROUP_PIC, [imgData, groupId],
                 function (err, writeResult) {
                     console.log('err', err, 'pg writeResult', writeResult);
                 });
         });
-    });   
+    });
     form.on('end', () => {
         res.json();
     });
-    form.parse(req);  
+    form.parse(req);
 });
 
 groupRouter.get('/group/pic', function (req, res) {
-    let groupId = req.query.groupId; 
-    let fileName = './group-pics/' + groupId + '.jpg';
-    let groupPic = groupId + '.jpg';
 
-    fs.exists(fileName, function (exists) {
-        if (exists) {
-            res.status(200).contentType('image/png').sendFile(groupPic, {
-                root: path.join(__dirname, '../group-pics/')
-            }, function (err) {
-                if (err) {
-                    console.log(err);
-                }
-            });
+    let groupId = req.query.groupId;
 
-        } else {
-            query(constants.GET_GROUP_PIC, [groupId],
-                function (err, readResult) {
-                    console.log('grou pic is ');
-                    console.log(readResult);
-                    console.log(readResult.length);
-                    if (readResult && readResult.length > 0) {
-
-                        fs.writeFile(fileName, readResult[0].picture, function (err) {
-                            res.status(200).sendFile(groupPic, {
-                                root: path.join(__dirname, '../group-pics/')
-                            }, function (err) {
-                                if (err) {
-                                    
-                                    console.log(err);
-                                }
-                            });
-                        });
-                    } else {
-                        res.status(404).end();
-                    }
-                });
-        }
-    })
+    query(constants.GET_GROUP_PIC, [groupId],
+        function (err, readResult) {
+            if (readResult && readResult.length > 0) { 
+                res.status(200).json({ picture: readResult[0].picture }).end();
+            } else {
+                res.status(404).end();
+            }
+        });
 });
 
 groupRouter.put('/group', function (req, res) {
@@ -133,9 +106,11 @@ groupRouter.delete('/group', function (req, res) {
 groupRouter.get('/group/search', function (req, res) {
     var groupName = req.query.name;
     console.log(constants.GET_GROUPS)
+    console.log(groupName);
     query(constants.GET_GROUPS,
         ['%' + groupName + '%'],
         function (err, result) {
+            console.log(result);
             if (err) {
                 res.status(422).end();
             } else {
@@ -145,11 +120,11 @@ groupRouter.get('/group/search', function (req, res) {
 });
 
 groupRouter.post('/group/user', function (req, res) {
-    let groupLookup = req.body;
+    let body = req.body;
     let token = req.headers.authorization.replace('Bearer ', '');
-    let userCred = jwt.decode(token, '123', 'HS256');
+    let userCred = jwt.decode(token, '123', 'HS256'); 
 
-    query(constants.ADD_USER_TO_GROUP, [groupLookup.id, userCred.userId, groupLookup.userType],
+    query(constants.ADD_USER_TO_GROUP, [body.id, body.personId, 2],
         function (err, result) {
             if (err) {
                 res.status(422).end();
@@ -174,10 +149,11 @@ groupRouter.delete('/group/user', function (req, res) {
 });
 
 groupRouter.get('/group/users', function (req, res) {
-    // TODO authentication to make sure the person is a part of the group
-    // or if the group is open
-    query(constants.GET_USERS_BY_GROUP, [req.query.id],
-        function (err, result) {
+    let token = req.headers.authorization.replace('Bearer ', '');
+    let userCred = jwt.decode(token, '123', 'HS256');
+
+    query(constants.GET_USERS_BY_GROUP, [userCred.userId],
+        function (err, result) { 
             if (err) {
                 res.status(404).end();
             } else {
