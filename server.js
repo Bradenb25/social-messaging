@@ -28,11 +28,11 @@ app.use(bodyParser.json());
 app.use(express.static('profile-pics'));
 app.use(express.static(__dirname + '/html'));
 
-app.use('/', friendRoutes);
-app.use('/', postRoutes);
-app.use('/', userRoutes);
-app.use('/', groupRoutes);
-app.use('/', messagesRoutes);
+app.use('/api/', friendRoutes);
+app.use('/api/', postRoutes);
+app.use('/api/', userRoutes);
+app.use('/api/', groupRoutes);
+app.use('/api/', messagesRoutes);
 
 
 
@@ -41,7 +41,7 @@ app.get('', function (req, res) {
 })
 
 app.get('*/', function (req, res) {
-    res.redirect('/')
+    res.sendFile(path.join(__dirname, '/html/index.html'));
 })
 
 app.listen(PORT);

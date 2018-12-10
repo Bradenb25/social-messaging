@@ -106,7 +106,7 @@ groupRouter.delete('/group', function (req, res) {
 groupRouter.get('/group/search', function (req, res) {
     var groupName = req.query.name;
     console.log(constants.GET_GROUPS)
-    console.log(groupName);
+    console.log(groupName); 
     query(constants.GET_GROUPS,
         ['%' + groupName + '%'],
         function (err, result) {
