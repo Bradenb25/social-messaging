@@ -84,7 +84,7 @@ module.exports = {
     `,
 
     GET_GROUPS_USER_IS_IN:
-    `
+        `
         SELECT g.name, g.id
         FROM groups_lookup gl
         JOIN groups g ON g.id = gl.group_id
@@ -109,22 +109,22 @@ module.exports = {
     `,
 
     GET_CONVERSATIONS:
-    `
+        `
         SELECT DISTINCT ON (u.username) u.username, u.first_name
         FROM messages m
         JOIN users u ON u.id = m.from_id
         WHERE to_id = $1;
     `,
 
-    UPDATE_MESSAGE: 
-    `
+    UPDATE_MESSAGE:
+        `
         UPDATE messages
         SET content = $1,
         WHERE from_id = $2 AND id = $3;
     `,
 
-    DELETE_MESSAGE: 
-    `
+    DELETE_MESSAGE:
+        `
         DELETE 
         FROM messages
         WHERE id = $1 AND from_id = $2;
@@ -139,21 +139,21 @@ module.exports = {
     `,
 
     UPDATE_GROUP_PIC:
-    `
+        `
         UPDATE groups
         SET picture = $1
         WHERE id = $2;
     `,
 
     GET_GROUP_PIC:
-    `
+        `
         SELECT picture 
         FROM groups
         WHERE id = $1;
     `,
 
-    GET_GROUP: 
-    `
+    GET_GROUP:
+        `
         SELECT g.id, g.name, g.picture, g.group_type_id, g.description, gt.icon, gt.name as group_type_name
         FROM groups g
         JOIN group_types gt ON g.group_type_id = gt.id
@@ -164,8 +164,8 @@ module.exports = {
     `
         SELECT DISTINCT ON (g.id) g.id, g.name 
         FROM groups g
-        JOIN groups_lookup gl ON gl.group_id = g.id
-        WHERE lower(name) LIKE $1 AND (gl.id = 1 OR gl.id = 2);
+        JOIN group_types gt ON gt.id = g.group_type_id
+        WHERE lower(g.name) LIKE '%%' AND (gt.id = 1 OR gt.id = 2);
     `,
 
     UPDATE_GROUP:
@@ -205,7 +205,7 @@ module.exports = {
         FROM users u
         JOIN groups_lookup g ON g.user_id = u.id
         WHERE g.group_id = $1;
-    `,    
+    `,
 
     CREATE_REQUEST_TO_JOIN_GROUP:
         `
@@ -230,7 +230,7 @@ module.exports = {
     `,
 
     GET_GROUP_TYPES:
-    `
+        `
         SELECT id, name as type, icon, description
         FROM group_types
     `,
@@ -270,7 +270,7 @@ module.exports = {
     `,
 
     GET_FRIEND_REQUESTS:
-    `
+        `
         SELECT u.first_name, u.username, u.id
         FROM friend_requests fr
         JOIN users u ON u.id = fr.from_id
@@ -278,7 +278,7 @@ module.exports = {
     `,
 
     DELETE_FRIEND_REQUEST:
-    `
+        `
         DELETE
         FROM friend_requests
         WHERE from_id = $1 AND to_id = $2;

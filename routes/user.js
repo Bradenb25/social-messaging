@@ -63,12 +63,12 @@ userRouter.get('/user/profile-pic/default', function (req, res) {
 });
 
 userRouter.get('/user/profile-pic', function (req, res) {
-
+    console.log('getting picture');
     query(`SELECT picture, username FROM users WHERE username = '${req.query.username}';`,
         function (err, readResult) {
             if (readResult.rows && readResult.rows.length > 0) {
                 res.status(200).json({ picture: readResult.rows[0].picture }).end();
-            } else {
+            } else { 
                 res.status(404).end();
             }
         });
