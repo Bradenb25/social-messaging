@@ -153,7 +153,7 @@ module.exports = {
     `,
 
     GET_GROUP:
-        `
+    `
         SELECT g.id, g.name, g.picture, g.group_type_id, g.description, gt.icon, gt.name as group_type_name
         FROM groups g
         JOIN group_types gt ON g.group_type_id = gt.id
@@ -165,7 +165,7 @@ module.exports = {
         SELECT DISTINCT ON (g.id) g.id, g.name 
         FROM groups g
         JOIN group_types gt ON gt.id = g.group_type_id
-        WHERE lower(g.name) LIKE '%%' AND (gt.id = 1 OR gt.id = 2);
+        WHERE lower(g.name) LIKE $1 AND (gt.id = 1 OR gt.id = 2);
     `,
 
     UPDATE_GROUP:
