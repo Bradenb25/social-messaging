@@ -6,6 +6,7 @@ var constants = require('../constants');
 var jwt = require('jwt-simple');
 var fs = require('fs');
 var path = require("path");
+const IncomingForm = require('formidable').IncomingForm;
 
 groupRouter.post('/group', function (req, res) {
     let token = req.headers.authorization.replace('Bearer ', '');
@@ -16,10 +17,11 @@ groupRouter.post('/group', function (req, res) {
     query(constants.CREATE_GROUP,
         [group.name, group.type, userCred.userId, group.description],
         function (err, result) {
+            console.log(result); 
             if (err) {
                 res.status(422).end();
             } else {
-                res.status(201).json(result).end();
+                res.status(201).json( { id: result[0].id } ).end();
             }
         })
 });
@@ -30,7 +32,7 @@ groupRouter.get('/group', function (req, res) {
     // TODO authenticate user is part of that group or that the 
     // group is an open group.
     query(constants.GET_GROUP, [req.query.groupId],
-        function (err, result) {
+        function (err, result) { 
             if (err) {
                 res.status(404).end();
             } else {
@@ -64,6 +66,7 @@ groupRouter.post('/group/pic', function (req, res) {
 groupRouter.get('/group/pic', function (req, res) {
 
     let groupId = req.query.groupId;
+    console.log('getting photo');
 
     query(constants.GET_GROUP_PIC, [groupId],
         function (err, readResult) {
@@ -138,9 +141,9 @@ groupRouter.delete('/group/user', function (req, res) {
     let token = req.headers.authorization.replace('Bearer ', '');
     let userCred = jwt.decode(token, '123', 'HS256');
 
-    query(constants.REMOVE_USER_FROM_GROUP, [req.query.id, userCred.userId],
+    query(constants.REMOVE_USER_FROM_GROUP, [userCred.userId, req.query.groupId],
         function (err, result) {
-            if (err) {
+            if (err) { 
                 res.status(404).end();
             } else {
                 res.status(200).end();
@@ -149,14 +152,13 @@ groupRouter.delete('/group/user', function (req, res) {
 });
 
 groupRouter.get('/group/users', function (req, res) {
-    let token = req.headers.authorization.replace('Bearer ', '');
-    let userCred = jwt.decode(token, '123', 'HS256');
+    let id = req.query.id
 
-    query(constants.GET_USERS_BY_GROUP, [userCred.userId],
+    query(constants.GET_USERS_BY_GROUP, [id],
         function (err, result) { 
-            if (err) {
+            if (err) { 
                 res.status(404).end();
-            } else {
+            } else {  
                 res.status(200).json(result).end();
             }
         })

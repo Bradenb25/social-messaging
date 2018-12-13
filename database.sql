@@ -50,8 +50,8 @@ CREATE TABLE post_comments (
 );
 
 CREATE TABLE friends_lookup (
-      user_id INT references users(id)
-    , friend_id INT references users(id)
+      user_id INT references users(id) NOT NULL
+    , friend_id INT references users(id) NOT NULL
 );
 
 CREATE TABLE messages (
@@ -72,6 +72,12 @@ CREATE TABLE group_requests (
         id SERIAL PRIMARY KEY
       , from_id INT references users(id)
       , group_id INT references groups(id)
+);
+
+CREATE TABLE to_do (
+        id SERIAL PRIMARY KEY
+      , item VARCHAR(1000) NOT NULL
+      , completed BOOLEAN NOT NULL
 );
 
 INSERT INTO users (email, username, hashed_password, first_name) VALUES

@@ -56,7 +56,7 @@ module.exports = {
     CREATE_USER:
         `
         INSERT INTO users (email, username, hashed_password, first_name) VALUES
-        ($1, $2, $3, $4); 
+        ($1, $2, $3, $4) RETURNING id; 
     `,
     GET_USER_BY_NAME:
         `
@@ -85,7 +85,7 @@ module.exports = {
 
     GET_GROUPS_USER_IS_IN:
         `
-        SELECT g.name, g.id
+        SELECT DISTINCT ON (g.id) g.id, g.name
         FROM groups_lookup gl
         JOIN groups g ON g.id = gl.group_id
         WHERE gl.user_id = $1;
@@ -195,13 +195,12 @@ module.exports = {
         `
         DELETE 
         FROM groups_lookup gl
-        JOIN groups g ON gl.group_id = g.id
-        WHERE user_id = $1 AND g.ownder = $2;
+        WHERE gl.user_id = $1 AND gl.group_id = $2;
     `,
 
     GET_USERS_BY_GROUP:
         `
-        SELECT u.first_name as name, u.id, username
+        SELECT DISTINCT ON (u.id) u.id, u.first_name as name, username
         FROM users u
         JOIN groups_lookup g ON g.user_id = u.id
         WHERE g.group_id = $1;
@@ -271,7 +270,7 @@ module.exports = {
 
     GET_FRIEND_REQUESTS:
         `
-        SELECT u.first_name, u.username, u.id
+        SELECT DISTINCT ON (u.id) u.id, u.first_name, u.username
         FROM friend_requests fr
         JOIN users u ON u.id = fr.from_id
         WHERE fr.to_id = $1;
@@ -279,9 +278,32 @@ module.exports = {
 
     DELETE_FRIEND_REQUEST:
         `
-        DELETE
+        DELETE 
         FROM friend_requests
         WHERE from_id = $1 AND to_id = $2;
+    `,
+
+    //#endregion
+
+    //#region todo
+
+    CREATE_TODO_ITEM:
+    `
+        INSERT INTO to_do (item, completed) 
+        VALUES ($1, $2);
+    `,
+
+    GET_TODO_ITEMS:
+    `
+        SELECT * FROM to_do 
+        ORDER BY completed ASC;
+    `,
+
+    UPDATE_TODO_ITEM:
+    `
+        UPDATE to_do
+        SET completed = $1
+        WHERE id = $2;
     `,
 
     //#endregion

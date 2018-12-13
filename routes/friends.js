@@ -66,7 +66,8 @@ friendsRouter.delete('/friends', function (req, res) {
 friendsRouter.post('/friend/request', function (req, res) {
     let token = req.headers.authorization.replace('Bearer ', '');
     let userCred = jwt.decode(token, '123', 'HS256');
-
+    console.log(userCred.userId);
+    console.log(req.body.userId);
     query(constants.CREATE_FRIEND_REQUEST, 
         [userCred.userId, req.body.userId], 
         function (err, result) {

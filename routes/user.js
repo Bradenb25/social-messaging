@@ -99,10 +99,10 @@ userRouter.post(
         console.log("made it into upload");
         var form = new IncomingForm();
         form.on('file', (field, file) => {
-            console.log("The file is " + file.path);
+            console.log("The file is " + file.path); 
             fs.readFile(file.path, 'hex', function (err, imgData) {
                 // console.log('imgData', imgData);
-                imgData = '\\x' + imgData;
+                imgData = '\\x' + imgData; 
                 query('UPDATE users SET picture = ($1) WHERE id = $2',
                     [imgData, userCred.userId],
                     function (err, writeResult) {
@@ -125,6 +125,7 @@ userRouter.post('/user', function (req, res) {
     query(constants.CREATE_USER,
         [user.email, user.userName, user.password, user.firstName],
         function (err, result) {
+            console.log(result);
             if (err) {
                 res.status(422).end();
             } else {

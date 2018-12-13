@@ -17,6 +17,7 @@ var postRoutes = require('./routes/posts');
 var userRoutes = require('./routes/user');
 var groupRoutes = require('./routes/groups');
 var messagesRoutes = require('./routes/messages');
+var todoRoutes = require('./routes/todo');
 
 var path = require("path");
 
@@ -33,6 +34,7 @@ app.use('/api/', postRoutes);
 app.use('/api/', userRoutes);
 app.use('/api/', groupRoutes);
 app.use('/api/', messagesRoutes);
+app.use('/api/', todoRoutes);
 
 
 
